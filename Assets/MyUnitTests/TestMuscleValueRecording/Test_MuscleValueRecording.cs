@@ -118,7 +118,10 @@ namespace MyTest
             // control source avatar
             for (int i = 0; i < sourceMusclesValue.Length; ++i)
                 sourcePose.muscles[i] = sourceMusclesValue[i];
-            sourcePoseHandler.SetHumanPose(ref sourcePose);
+
+            //Adding: Changing Set to Get
+            sourcePoseHandler.GetHumanPose(ref sourcePose); //Need to set the pose
+            targetPoseHandler.SetHumanPose(ref targetPose);
 
             // Recording source avatar
             if (onRecording)
@@ -135,6 +138,8 @@ namespace MyTest
             if (_updateTimer > 0)
                 return true;
             _updateTimer += _fpsDeltaTime;
+            //sourcePoseHandler.GetHumanPose(ref sourcePose);
+
 
             // muscle value
             MuscleValues tmpValue = new MuscleValues();
@@ -305,3 +310,5 @@ namespace MyTest
     [93]Right Little 2 Stretched
     [94]Right Little 3 Stretched     
     */
+
+    //x-box motion is incorrect. Something wrong
