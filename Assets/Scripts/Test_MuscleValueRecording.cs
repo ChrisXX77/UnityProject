@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
+using UnityEngine.SceneManagement;
 
 namespace MyTest
 {
@@ -19,7 +20,7 @@ namespace MyTest
         private HumanPoseHandler sourcePoseHandler;
         private HumanPose sourcePose;
         public float[] sourceMusclesValue;
-        public string [] sourceMusclesName;
+        public string[] sourceMusclesName;
 
         [Header("===Target Avatar===")]
         public Animator targetAnimator;
@@ -35,7 +36,6 @@ namespace MyTest
         private bool onReplay = false;
         private int replayFrameIndex = 0;
 
-
         void OnGUI()
         {
             GUI.skin.button.border = new RectOffset(8, 8, 8, 8);
@@ -44,23 +44,17 @@ namespace MyTest
 
             int BtnHeight = 40;
             int BtnWidth = 150;
-            
+
             GUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
 
-            // recording
-            if(onRecording)
+            // Existing buttons for recording and replay
+            if (onRecording)
             {
                 if (GUILayout.Button($"Record[On]:{motionData.motionFrames.Count}", GUILayout.Width(BtnWidth), GUILayout.Height(BtnHeight)))
                 {
                     onRecording = false;
-                    
-                    // save motionData to JsonFile
-                    if (motionData != null)
-                    {
-                        File.WriteAllText(JsonFilePath, JsonUtility.ToJson(motionData));
-                        Debug.Log("save to :" + JsonFilePath);
-                    }
+                    SaveData();
                 }
             }
             else
@@ -73,7 +67,6 @@ namespace MyTest
                 }
             }
 
-            // replay
             if (onReplay)
             {
                 if (GUILayout.Button($"Replay[On]:{replayFrameIndex}", GUILayout.Width(BtnWidth), GUILayout.Height(BtnHeight)))
@@ -92,8 +85,15 @@ namespace MyTest
                 }
             }
 
-            GUILayout.FlexibleSpace(); 
-            GUILayout.EndHorizontal(); 
+            // Save data to Json file and replay on new scene
+            if (GUILayout.Button("Save", GUILayout.Width(BtnWidth), GUILayout.Height(BtnHeight)))
+            {
+                SaveData();
+                SceneManager.LoadScene("Replace Scene"); // Replace with your next scene name
+            }
+
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
         }
 
         void Start()
@@ -111,22 +111,19 @@ namespace MyTest
             targetPoseHandler.GetHumanPose(ref targetPose);
         }
 
-
-        //void LateUpdate()
         void Update()
         {
-            // control source avatar
+            // Control source avatar
             for (int i = 0; i < sourceMusclesValue.Length; ++i)
                 sourcePose.muscles[i] = sourceMusclesValue[i];
 
-            //Adding: Changing Set to Get
-            sourcePoseHandler.GetHumanPose(ref sourcePose); //Need to set the pose
+            sourcePoseHandler.GetHumanPose(ref sourcePose);
             targetPoseHandler.SetHumanPose(ref targetPose);
 
             // Recording source avatar
             if (onRecording)
                 DoRecording();
-            
+
             // Replay to target avatar
             if (onReplay)
                 DoReplay();
@@ -138,22 +135,16 @@ namespace MyTest
             if (_updateTimer > 0)
                 return true;
             _updateTimer += _fpsDeltaTime;
-            //sourcePoseHandler.GetHumanPose(ref sourcePose);
 
-
-            // muscle value
-            MuscleValues tmpValue = new MuscleValues();
-            tmpValue.muscleValues = new float[sourcePose.muscles.Length];
+            MuscleValues tmpValue = new MuscleValues
+            {
+                muscleValues = new float[sourcePose.muscles.Length],
+                position = sourceAnimator.gameObject.transform.localPosition,
+                rotation = sourceAnimator.gameObject.transform.localRotation
+            };
             for (int i = 0; i < sourcePose.muscles.Length; ++i)
                 tmpValue.muscleValues[i] = sourcePose.muscles[i];
 
-            // position & rotation
-            //tmpValue.position = sourcePose.bodyPosition;
-            //tmpValue.rotation = sourcePose.bodyRotation;
-            tmpValue.position = sourceAnimator.gameObject.transform.localPosition;
-            tmpValue.rotation = sourceAnimator.gameObject.transform.localRotation;
-
-            // add a frames
             motionData.motionFrames.Add(tmpValue);
             return false;
         }
@@ -165,46 +156,45 @@ namespace MyTest
                 return;
             _updateTimer += _fpsDeltaTime;
 
-            // set muscles to target
             for (int i = 0; i < targetPose.muscles.Length; ++i)
                 targetPose.muscles[i] = replayData[replayFrameIndex].muscleValues[i];
 
-            // set position & rotation
-            //targetPose.position = replayData[replayFrameIndex].bodyPosition;
-            //targetPose.rotation = replayData[replayFrameIndex].bodyRotation;
             targetAnimator.gameObject.transform.localPosition = replayData[replayFrameIndex].position;
             targetAnimator.gameObject.transform.localRotation = replayData[replayFrameIndex].rotation;
 
-            // set to target
             targetPoseHandler.SetHumanPose(ref targetPose);
 
-            // nex frame
             replayFrameIndex += 1;
-            // loop motion
             if (replayFrameIndex >= motionData.motionFrames.Count)
                 replayFrameIndex = 0;
         }
 
-        
+        private void SaveData()
+        {
+            //Save Data to JsonFile
+            if (motionData != null)
+            {
+                File.WriteAllText(JsonFilePath, JsonUtility.ToJson(motionData));
+                Debug.Log("Data saved to: " + JsonFilePath);
+            }
+        }
     }
 
+    //[Serializable]
+    // public class MuscleValues
+    // {
+    //     public Vector3 position;
+    //     public Quaternion rotation;
+    //     public float[] muscleValues;
+    // }
 
-    [Serializable]
-    public class MuscleValues
-    {
-        public Vector3 position;
-        public Quaternion rotation;
-        public float[] muscleValues;
-    }
-
-    [Serializable]
-    public class MotionData
-    {
-        public List<MuscleValues> motionFrames = new();
-    }
-
-
+    // [Serializable]
+    // public class MotionData
+    // {
+    //     public List<MuscleValues> motionFrames = new List<MuscleValues>();
+    // }
 }
+
 
 
 
