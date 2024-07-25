@@ -36,6 +36,8 @@ namespace MyTest
         private bool onReplay = false;
         private int replayFrameIndex = 0;
 
+        private bool isPaused = false;
+
         void OnGUI()
         {
             GUI.skin.button.border = new RectOffset(8, 8, 8, 8);
@@ -92,6 +94,22 @@ namespace MyTest
                 SceneManager.LoadScene("Replace Scene"); // Replace with your next scene name
             }
 
+            // Pause button
+            if (isPaused)
+            {
+                if (GUILayout.Button($"Pause[On]", GUILayout.Width(BtnWidth), GUILayout.Height(BtnHeight)))
+                {
+                    isPaused = false;
+                }
+            }
+            else
+            {
+                if (GUILayout.Button($"Pause[Off]", GUILayout.Width(BtnWidth), GUILayout.Height(BtnHeight)))
+                {
+                    isPaused = true;
+                }
+            }
+
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
         }
@@ -113,6 +131,11 @@ namespace MyTest
 
         void Update()
         {
+
+            if (isPaused)
+            {
+                return; // Skip update logic if paused
+            }
             // Control source avatar
             for (int i = 0; i < sourceMusclesValue.Length; ++i)
                 sourcePose.muscles[i] = sourceMusclesValue[i];

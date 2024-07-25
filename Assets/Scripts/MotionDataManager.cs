@@ -8,6 +8,7 @@ namespace MyTest
     public class MotionDataManager : MonoBehaviour
     {
         public string JsonFilePath = "D://temp//test1.json";
+        
         public Animator OriginalAnimator;
         private HumanPoseHandler OriginalPoseHandler;
         private HumanPose OriginalPose;
